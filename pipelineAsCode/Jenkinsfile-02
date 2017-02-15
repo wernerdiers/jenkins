@@ -1,0 +1,31 @@
+//declarative pipeline as code
+pipeline{
+	agent any 
+
+	stages{
+		stage("BUILD"){
+			steps{
+				sh 'echo "BUILD PHASE"'
+				sh 'touch "app.txt"'
+				sh 'echo "BUILDED APP" > "app.txt"'
+				stash includes: '*.txt', name: 'app' 
+			}
+		}
+
+		stage("TEST"){
+			steps{
+				sh 'echo "TEST PHASE"'
+				unstash 'app'
+				sh ([script:'if $(cat *.txt | grep -q "BUILDED"); then echo "TEST PASSED"; fi'])
+			}
+		}
+
+		stage("DEPLOY"){
+			steps{
+				sh 'echo "DEPLOY PHASE"'
+				sh 'touch DEPLOYED_APP.app'
+			}
+
+		}
+	}				
+}
