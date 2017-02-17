@@ -1,0 +1,93 @@
+// Pipeline Declarativo en Beta - release en Diceimbre/2016
+pipeline{
+
+    agent { 
+        label 'centos' 
+    } 
+    
+    tools { 
+        jdk 'jdk8'
+        maven 'mvn3.3.9' 
+    }
+
+    environment { 
+        PIPELINE_NAME = "Jenkins-02"
+    }
+
+    /*options {
+        buildDiscarder(logRotator(numToKeepStr:'10'))
+    }*/
+
+    stages{
+        stage("BUILD"){
+            steps{
+                parallel(
+                    firstTask:{
+                        echo "Executing task on ${env.NODE_NAME}"
+                        sh 'echo "BUILD PHASE"'
+						sh 'touch "app.txt"'
+						sh 'echo "BUILDED APP" > "app.txt"'
+                        sleep(15)
+						stash includes: '*.txt', name: 'app'
+                    },
+                    secondTask:{
+                        timeout(time: 16, unit: 'SECONDS') {
+                            /* NO SE PUEDE CAMBIAR DE AGENTE DENTRO DE UNA TASK PORQUE 
+                            SE PIERDA LA INFORMACION Y NO SE VISUALIZA EL PIPELINE
+                            agent { label "master" } */
+                            echo "Executing task on ${env.NODE_NAME}"
+                            echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+                            sleep(4)
+                        }
+                    }
+                )
+            }
+        }
+
+        stage("TEST"){
+            steps{
+                sh 'echo "TEST PHASE"'
+                sh "mvn -version" 
+				unstash 'app'
+				sh ([script:'if $(cat *.txt | grep -q "BUILDED"); then echo "TEST PASSED"; fi'])
+                echo "RESULT: ${currentBuild.result}"
+            }
+        }
+
+        stage("DEPLOY"){
+            environment{
+                current_stage = "DEPLOY"
+            }
+            steps{
+                sh 'echo "DEPLOY PHASE"'
+                echo "I'm in satage: $current_stage"
+                //echo getCurrentStageName()
+                sh 'hostname -f'
+                sh 'pwd'
+				sh 'touch DEPLOYED_APP.app'
+                //sh 'provision.sh'
+            }
+
+        }
+    }  
+
+    post{
+        success{
+            mail(
+                from:"jenkins-master@globant.com",
+                to:"wernerdiers@gmail.com",
+                subject:"Build ${env.BUILD_NUMBER} state: SUCCESS ",
+                body:"Project ${env.PIPELINE_NAME} Build ID: ${env.BUILD_ID} URL ${env.BUILD_URL}"
+            )
+        }
+
+        failure{
+            mail(
+                from:"jenkins-master@globant.com",
+                to:"wernerdiers@gmail.com",
+                subject:"Build ${env.BUILD_NUMBER} state: FAILED ",
+                body:"Project ${env.PIPELINE_NAME} Build ID: ${env.BUILD_ID} URL ${env.BUILD_URL}"
+            )
+        }  
+    }
+}
