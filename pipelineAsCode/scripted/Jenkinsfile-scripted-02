@@ -1,0 +1,114 @@
+#!groovy
+//node('node') {
+node('centos') {
+
+    currentBuild.result = "SUCCESS"
+
+    try {
+
+       stage 'Checkout'
+
+            echo 'checkout scm'
+
+       stage 'Test'
+
+            env.NODE_ENV = "test"
+
+            print "Environment will be : ${env.NODE_ENV}"
+            echo "Environment will be : ${env.NODE_ENV}"
+
+            //sh 'node -v'
+            //sh 'npm prune'
+            //sh 'npm install'
+            //sh 'npm test'
+
+       stage 'Build Docker'
+
+            //sh './dockerBuild.sh'
+            echo 'building docker'
+            try {
+                timeout(time: 15, unit: 'SECONDS') {
+                    input message: 'Do you want to release this build?',
+                          parameters: [[$class: 'BooleanParameterDefinition',
+                                        defaultValue: false,
+                                        description: 'Ticking this box will do a release',
+                                        name: 'Deploy' //Stage name goes here
+                                        ]]
+                }
+            } catch (err) {
+                def user = err.getCauses()[0].getUser()
+                echo "Aborted by:\n ${user}"
+            }
+
+       stage 'Deploy'
+
+            echo 'Push to Repo'
+            //sh './dockerPushToRepo.sh'
+            def userInput = input(
+                id: 'input', message: 'input something: ', ok: 'ok', parameters: [string(defaultValue: '46!"vsfhjañsd', description: 'random input ', name: 'label_of_input')]
+            )
+            echo ("Input was: " + userInput)
+
+            echo 'ssh to web server and tell it to pull new image'
+            // 'ssh deploy@xxxxx.xxxxx.com running/xxxxxxx/dockerRun.sh'
+
+       stage 'Cleanup'
+
+            echo 'prune and cleanup'
+            //sh 'npm prune'
+            //sh 'rm node_modules -rf'
+
+            mail body: 'project build successful',
+                        from: 'xxxx@yyyyy.com',
+                        replyTo: 'xxxx@yyyy.com',
+                        subject: 'project build successful',
+                        to: 'yyyyy@yyyy.com'
+
+        }
+
+
+    catch (err) {
+
+        currentBuild.result = "FAILURE"
+
+            mail body: "project build error is here: ${env.BUILD_URL}" ,
+            from: 'xxxx@yyyy.com',
+            replyTo: 'yyyy@yyyy.com',
+            subject: 'project build failed',
+            to: 'zzzz@yyyyy.com'
+
+        throw err
+    }
+
+}
+
+/*
+
+
+def userPasswordInput = input(
+    id: 'Password', message: 'input your password: ', ok: 'ok', parameters: [string(defaultValue: 'master', description: '.....', name: 'LIB_TEST')]
+)
+echo ("Password was: " + userPasswordInput)
+
+
+
+
+
+
+def userInput = input(
+    id: 'input', message: 'input something: ', ok: 'ok', parameters: [string(defaultValue: '46!"vsfhjañsd', description: 'random input ', name: 'label_of_input')]
+)
+echo ("Input was: " + userInput)
+
+
+
+
+
+
+
+def userInput = input(
+    id: 'input', message: 'input something: ', parameters: [string(defaultValue: '46!"vsfhjañsd', description: 'random input ', name: 'label_of_input')]
+)
+echo ("Input was: " + userInput)
+
+*/
