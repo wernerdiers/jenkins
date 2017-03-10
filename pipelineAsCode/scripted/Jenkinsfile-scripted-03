@@ -1,0 +1,21 @@
+def branches = [:]  
+branches["Branch 1"] = {  
+    node {
+    	stage('TO HELL') {
+	        sh 'echo "I am node $(hostname)"' // do something with the project files
+	        sh 'sleep 30'
+	    }
+    }
+}
+
+branches["Branch 2"] = {  
+    node("maven") {
+    	stage('TO THE TOP'){
+	        sh 'echo "I am node $(hostname -f)"'
+	        sh 'sleep 60'
+	        // do something else with the project files
+	    }
+    }
+}
+
+parallel branches
