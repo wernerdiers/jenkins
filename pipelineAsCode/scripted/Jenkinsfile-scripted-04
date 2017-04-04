@@ -1,0 +1,49 @@
+node {
+    stage ('Config'){
+      gitScm = git url: 'http://admin@10.2.2.3:7990/scm/webhooks/in-line.git', branch: '**', credentialsId: 'bitbucket-admin'
+      jira_key = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+    }
+
+    stage ('Checkout'){ 
+      def branch = sh(script: 'rev=$(git rev-parse HEAD); git name-rev $rev | awk \'{ print $2}\'', returnStdout: true)     
+      sh 'git show $(git rev-parse HEAD) --pretty=format:"%n%n%nThe author of %h was %an (%ae) %nWhen: %ar%nComment: %s %nParent hash: %p %n Notes: %N" --stat && git branch --contains $(git rev-parse HEAD)'
+      echo "${branch}"
+    }
+    
+    stage ('Env Vars'){
+      // variables=env.getEnvironment()
+      //echo "${variables}"
+      echo "${env.JIRA_URL}"
+      sh 'env > env.txt' 
+      for (String i : readFile('env.txt').split("\r?\n")) {
+        println i
+      }
+    }
+    
+    stage ('Show changed file'){
+        pwd
+        sh "cat test*"
+    }
+
+    stage ('JIRA'){
+      echo "${jira_key}"
+      //def ret = sh(script: 'uname', returnStdout: true)
+      //def jira_issue=sh(script:'echo $jira_key | tr -d "[],"', returnStdout: true)
+      def jira_issue = jira_key.toString()
+      //def jira_issue_2 = jira_key.substring(2, 5)
+      //str.substring(2, 5); 
+      jira_issue = jira_issue.substring(1, jira_issue.length()-1)
+      echo "${jira_issue}"
+      //echo "${jira_issue_2}"
+      jiraComment body: "Job name: ${env.JOB_NAME} with build number: ${env.BUILD_NUMBER} finished with status: ${env.BUILD_STATUS}. Go to ${env.BUILD_URL} ", issueKey: "${jira_issue}"
+    }
+}
+
+
+/*
+
+AGREGGAR NOTIFY STASH LUEGO QUEUN BULD SE EJECUTA PARA QUE SE REFLEJE EN BITBUCKET
+USUALMENTE SE HACE COMO POST BUILD ACTION
+
+*/
+
