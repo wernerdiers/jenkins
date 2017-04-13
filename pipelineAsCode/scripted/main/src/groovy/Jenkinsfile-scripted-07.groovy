@@ -9,6 +9,7 @@ try {
             jira_issue = jira_key.toString()
             jira_issue = jira_issue.substring(1, jira_issue.length() - 1)
             JIRA_SITE = 'jira'
+            JIRA_PROJECT = 'DEVOPS'
             print "Working on: ${JIRA_SITE} with issue ID: ${jira_issue}"
         }
 
@@ -36,6 +37,11 @@ try {
             def issue = jiraGetIssue(idOrKey: "${jira_issue}", site: "${JIRA_SITE}")
             //echo issue.data.toString()
 
+            //Get project
+            def project = jiraGetProject(idOrKey: "${JIRA_PROJECT}", site: "${JIRA_SITE}")
+            echo project.data.toString()
+
+
             //Get transition
             def transitions = jiraGetIssueTransitions idOrKey: "${jira_issue}", site: "${JIRA_SITE}"
             echo transitions.data.toString()
@@ -53,7 +59,7 @@ try {
                                     ]
                             ],
                             "transition": [
-                                    "id"    : 21,
+                                    "id"    : 31,
                                     "fields": [
                                             "assignee"  : [
                                                     "name": "admin"
@@ -75,7 +81,7 @@ try {
     stage ('Post-build'){
         print "Build number: " + currentBuild.number + ", result: " + currentBuild.result + ", duration: ${currentBuild.duration}"
 
-        if (currentBuild.result == 'FAILURE'){
+        //if (currentBuild.result == 'SUCCESS'){
             //Create Bug
             def testIssue = [fields: [ project: [id: 10000],
                                        summary: "New JIRA Created from Jenkins.",
@@ -86,7 +92,14 @@ try {
 
             echo response.successful.toString()
             echo response.data.toString()
-        }
+            echo "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            echo response.data.key
+            echo response.data.id
+
+        //Link current issue with new one
+        jiraLinkIssues type: "Relates", inwardKey: "${jira_issue}", outwardKey: response.data.key, site: "${JIRA_SITE}"
+
+        //}
 
         //JIRA Plugin
         /*
@@ -114,6 +127,3 @@ try {
        // jiraNotifyIssue idOrKey: "${jira_issue}", notify: notify, site: "${JIRA_SITE}"
     }
 }
-
-
-
