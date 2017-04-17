@@ -5,7 +5,7 @@ try {
         // #################  CONFIG #################
         stage('Config') {
             //GIT
-            git_url = 'http://admin@10.2.2.3:7990/scm/webhooks/in-line.git'
+            git_url = 'http://devbitbucket:7990/scm/escm/jenkins-jira.git'
             git_cred = 'wernerd'
             git url: "${git_url}", branch: '**', credentialsId: "${git_cred}"
 
@@ -40,9 +40,10 @@ try {
             //Get issgue link types
             def issueLinkTypes = jiraGetIssueLinkTypes site: "${JIRA_SITE}", failOnError: false
             echo issueLinkTypes.data.toString()
-
+            
+            //Get issue
             def issue = jiraGetIssue(idOrKey: "${jira_issue}", site: "${JIRA_SITE}")
-            //echo issue.data.toString()
+            echo issue.data.toString()
             JIRA_PROJECT = issue.data.fields.project.key
 
             //Get project
@@ -91,10 +92,10 @@ try {
 
         if (currentBuild.result == 'SUCCESS'){
             //Create Bug
-            def testIssue = [fields: [ project: [id: 10000],
+            def testIssue = [fields: [ project: [id: 20311],
                                        summary: "New JIRA Created from Jenkins.",
                                        description: "New JIRA Created from Jenkins.",
-                                       issuetype: [id: 10004]]]
+                                       issuetype: [id: 1]]]
 
             response = jiraNewIssue issue: testIssue, site: "${JIRA_SITE}"
 
@@ -104,7 +105,7 @@ try {
             echo response.data.id
 
         //Link current issue with new one
-        jiraLinkIssues type: "Relates", inwardKey: "${jira_issue}", outwardKey: response.data.key, site: "${JIRA_SITE}"
+        jiraLinkIssues type: "Dependency", inwardKey: "${jira_issue}", outwardKey: response.data.key, site: "${JIRA_SITE}"
         }
 
         //JIRA Plugin
