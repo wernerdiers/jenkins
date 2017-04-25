@@ -2,7 +2,6 @@ try {
     currentBuild.result = 'SUCCESS'
 
     node () {
-        // #################  CONFIG #################
         stage('Config') {
             //GIT
             git_url = 'http://admin@10.2.2.3:7990/scm/webhooks/in-line.git'
@@ -11,73 +10,36 @@ try {
 
             //JIRA Plugin
             JIRA_SITE = 'devjira'
-            JIRA_PROJECT = 'default_value'
             jira_issue_obj = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
-            jira_issue = jira_issue_obj.toString()
-            jira_issue = jira_issue.substring(1, jira_issue.length() - 1)
-            print "Working on: ${JIRA_SITE} with issue ID: ${jira_issue}"
+            //jira_issue = jira_issue_obj.toString()
+            //jira_issue = jira_issue.substring(1, jira_issue.length() - 1)
+            jira_issue = "DEVOPS-5"
+            print "Working on: " + getSite() + " with issue ID: " + getIssueId()
         }
 
-        // #################  CHECKOUT #################
-        stage('Checkout') {
-            //def branch = sh(script: 'rev=$(git rev-parse HEAD); git name-rev $rev | awk \'{ print $2}\'', returnStdout: true)
-            sh 'git show $(git rev-parse HEAD) --pretty=format:"%n%n%nThe author of %h was %an (%ae) %nWhen: %ar%nComment: %s %nParent hash: %p %n Notes: %N" --stat && git branch --contains $(git rev-parse HEAD)'
-        }
 
-        // #################  ENV VARS #################
-        stage('Env Vars') {
-            /*
-            echo "${env.JIRA_URL}"
-            sh 'env > env.txt'
-            for (String i : readFile('env.txt').split("\r?\n")) {
-                println i
+
+        stage('Stage') {
+
+            commit_info = getCommitInfo()
+            wrap([$class: 'BuildUser']) {
+                sh 'echo ${BUILD_USER}'
+                sh 'BUILD_USER="werner"'
+                sh 'echo ${BUILD_USER}'
+                sh 'export BUILD_USER="werner"'
+                sh 'echo ${BUILD_USER}'
             }
-            */
         }
 
-        // #################  JIRA #################
+
+
         stage('JIRA') {
-            //Get issgue link types
-            def issueLinkTypes = jiraGetIssueLinkTypes site: "${JIRA_SITE}", failOnError: false
-            echo issueLinkTypes.data.toString()
 
-            def issue = jiraGetIssue(idOrKey: "${jira_issue}", site: "${JIRA_SITE}")
-            //echo issue.data.toString()
-            JIRA_PROJECT = issue.data.fields.project.key
+            print getIssueLinkTypes()
+            print getTransitionsTypes()
 
-            //Get project
-            def project = jiraGetProject(idOrKey: "${JIRA_PROJECT}", site: "${JIRA_SITE}")
-            echo project.data.toString()
-
-            //Get transition
-            def transitions = jiraGetIssueTransitions idOrKey: "${jira_issue}", site: "${JIRA_SITE}"
-            echo transitions.data.toString()
-
-            //Edit transition
-            def transitionInput =
-                    [
-                            "update": [
-                                    "comment": [
-                                            [
-                                               "add": [
-                                                    "body": "Bug has been fixed."
-                                                    ]
-                                            ]
-                                    ]
-                            ],
-                            "transition": [
-                                    "id"    : 21,
-                                    "fields": [
-                                            "assignee"  : [
-                                                    "name": "admin"
-                                            ],
-                                            "resolution": [
-                                                    "name": "Done"
-                                            ]
-                                    ]
-                            ]
-                    ]
-            jiraTransitionIssue idOrKey: "${jira_issue}", input: transitionInput, site: "${JIRA_SITE}"
+            //Make build fail
+           // YOU_SHALL_NOT_PASS
         }
     }
 } catch (e) {
@@ -86,51 +48,122 @@ try {
 
 } finally {
     // #################  POST-BUILD #################
-    stage ('Post-build'){
+    stage ('Post-build') {
+
         print "Build number: " + currentBuild.number + ", result: " + currentBuild.result + ", duration: ${currentBuild.duration}"
+        jira_comment_body =  """
+                     Job ${env.JOB_NAME} with build number: ${env.BUILD_NUMBER} finished with status:
+                     *${currentBuild.result}*. \n
+                     *Build URL:* ${env.BUILD_URL} \n\n
+                     "${commit_info}"
+                     """
 
-        if (currentBuild.result == 'SUCCESS'){
-            //Create Bug
-            def testIssue = [fields: [ project: [id: 10000],
-                                       summary: "New JIRA Created from Jenkins.",
-                                       description: "New JIRA Created from Jenkins.",
-                                       issuetype: [id: 10004]]]
-
-            response = jiraNewIssue issue: testIssue, site: "${JIRA_SITE}"
-
-            echo response.successful.toString()
-            echo response.data.toString()
-            echo response.data.key
-            echo response.data.id
-
-        //Link current issue with new one
-        jiraLinkIssues type: "Relates", inwardKey: "${jira_issue}", outwardKey: response.data.key, site: "${JIRA_SITE}"
+        newComment = addComment()
+        if(newComment.toString().contains("anonymous")){
+            jiraEditComment(
+                    site: getSite(),
+                    idOrKey: getIssueId(),
+                    commentId: newComment.data.id,
+                    comment: "${jira_comment_body}"
+            )
         }
 
-        //JIRA Plugin
-        /*
-        jiraComment (
-                issueKey: "${jira_issue}",
-                body: "Job name: ${env.JOB_NAME} with build number: ${env.BUILD_NUMBER} finished with status: ${currentBuild.result}. Go to ${env.BUILD_URL} "
-        )
-        */
-        //JIRA-Pipeline-Steps Plugin
-        jiraAddComment (
-                site: "${JIRA_SITE}",
-                idOrKey: "${jira_issue}",
-                comment: "Job name: ${env.JOB_NAME} with build number: ${env.BUILD_NUMBER} finished with status: ${currentBuild.result}. Go to ${env.BUILD_URL} "
-        )
-
-        //Notify
-        def notify = [ subject: "Update about ${jira_issue}",
-                       textBody: "Just wanted to update about this issue...",
-                       htmlBody: "Just wanted to update about this issue...",
-                       to: [ reporter: true,
-                             assignee: true,
-                             watchers: false,
-                             voters: false
-                       ]
-        ]
-       // jiraNotifyIssue idOrKey: "${jira_issue}", notify: notify, site: "${JIRA_SITE}"
     }
+}
+
+
+def getSite(){
+    return "${JIRA_SITE}"
+}
+
+def getIssueId(){
+    return "${jira_issue}"
+}
+
+def getIssue(){
+    def issue = jiraGetIssue(idOrKey: getIssueId(), site: getSite())
+    return issue
+}
+
+def getProjectId(){
+    def projectId = getIssue().data.fields.getProjectId.key
+    return "${projectId}"
+}
+
+def getIssueLinkTypes(){
+    def issueLinkTypes = jiraGetIssueLinkTypes site: getSite(), failOnError: false
+    return issueLinkTypes.data.toString()
+}
+
+def getTransitionsTypes(){
+    def transitionsTypes = jiraGetIssueTransitions idOrKey: getIssueId(), site: getSite()
+    return transitionsTypes.data.toString()
+}
+
+def editTransitionInput(){
+    def transitionInput =
+        [
+            "update"    : [
+                    "comment": [
+                            [
+                                    "add": [
+                                            "body": "Bug has been fixed."
+                                    ]
+                            ]
+                    ]
+            ],
+            "transition": [
+                    "id"    : 21,
+                    "fields": [
+                            "assignee"  : [
+                                    "name": "admin"
+                            ],
+                            "resolution": [
+                                    "name": "Done"
+                            ]
+                    ]
+            ]
+        ]
+}
+
+def getCommitInfo(){
+    def commitInfo =sh (
+            script: 'git show $(git rev-parse HEAD) --pretty=format:"%n%n%n*Commit:* %h %n*User:* %an (%ae) %n*When:* %ar%n*Comment:* %s %n*Parent hash:* %p %n*Notes:* %N" --stat && echo -n "*Branch:* " &&  git branch --contains $(git rev-parse HEAD)',
+            returnStdout: true
+    ).trim()
+    return commitInfo
+}
+
+def setTransitionIssue(){
+    jiraTransitionIssue idOrKey: getIssueId(), input: transitionInput, site: getSite()
+}
+
+def editNewIssue(){
+    //Create Bug
+    def newIssue = [fields: [project    : [id: getProjectId()],
+                             summary    : "New JIRA Created from Jenkins.",
+                             description: "New JIRA Created from Jenkins.",
+                             issuetype  : [id: 10004]]]
+}
+
+def setNewIssue(){
+    response = jiraNewIssue issue: testIssue, site: getSite()
+}
+
+def setLinkedIssue(){
+    jiraLinkIssues type: "Relates", inwardKey: getIssueId(), outwardKey: response.data.key, site: getSite()
+}
+
+def addComment(){
+    //Add comment to the issue
+    def newComment = jiraAddComment(
+            site: getSite(),
+            idOrKey: getIssueId(),
+            comment: """Job ${env.JOB_NAME} with build number: ${env.BUILD_NUMBER} finished with status:
+                     *${currentBuild.result}*. \n
+                     *Build URL:* ${env.BUILD_URL} \n\n
+                     "${commit_info}"
+            """
+    )
+    return newComment
 }
