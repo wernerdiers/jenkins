@@ -4,7 +4,7 @@ import groovy.json.JsonSlurper
 
 node() {
     def any_success = false
-    BUILD_JOB_NAME = "api-jenkins-build-job"
+    BUILD_JOB_NAME = "api-jenkins-build-job-parameters"
     JENKINS_IP_PORT = "10.1.2.10:8080"
     CREDENTIALS = "admin"
 
@@ -85,13 +85,17 @@ def buildJobCrumbWithParameter(String jobName){
     def PARAM_ONE = "Ruben_pagate_las_facturas"
     def PARAM_TWO = "Ruben_botooooon"
     def CRUMB = getCrumbIssuer()
+    def URL_JOB = ["${env.JENKINS_URL}job/${BUILD_JOB_NAME}/buildWithParameters?",
+                   "PARAM_ONE=${PARAM_ONE}&",
+                   "PARAM_TWO=${PARAM_TWO}"
+    ]
 
     def rx = httpRequest customHeaders: [[name:'Jenkins-Crumb',\
             value: "${CRUMB}"]],\
             httpMode: 'POST',\
             ignoreSslErrors: true,\
             responseHandle: 'LEAVE_OPEN',\
-            url: "${env.JENKINS_URL}job/${BUILD_JOB_NAME}/build?PARAM_ONE=${PARAM_ONE}&PARAM_TWO=${PARAM_TWO}",\
+            url: URL_JOB.join(""),\
             authentication: "${CREDENTIALS}",\
             validResponseCodes: '100:500'
 
@@ -122,4 +126,4 @@ def buildJobWithParameter(String jobName){
 }
 
 
-PROBAR CON POST http://10.1.2.10:8080/job/api-jenkins-build-job/build?PARAM_ONE=Ruben_pagate_las_facturas&PARAM_TWO=Ruben_botooooon
+//PROBAR CON POST http://10.1.2.10:8080/job/api-jenkins-build-job/build?PARAM_ONE=Ruben_pagate_las_facturas&PARAM_TWO=Ruben_botooooon
