@@ -34,7 +34,9 @@ try {
 
 
         stage('JIRA') {
-
+            def jira = getIssue()
+           // print jira.data.toString()
+            def project = getProjectId()
             print getIssueLinkTypes()
             print getTransitionsTypes()
 
@@ -58,19 +60,17 @@ try {
                      "${commit_info}"
                      """
 
-        newComment = addComment()
-        if(newComment.toString().contains("anonymous")){
-            jiraEditComment(
-                    site: getSite(),
-                    idOrKey: getIssueId(),
-                    commentId: newComment.data.id,
-                    comment: "${jira_comment_body}"
-            )
-        }
-
+        //newComment = addComment()
     }
 }
 
+def getCommitInfo(){
+    def commitInfo =sh (
+            script: 'git show $(git rev-parse HEAD) --pretty=format:"%n%n%n*Commit:* %h %n*User:* %an (%ae) %n*When:* %ar%n*Comment:* %s %n*Parent hash:* %p %n*Notes:* %N" --stat && echo -n "*Branch:* " &&  git branch --contains $(git rev-parse HEAD)',
+            returnStdout: true
+    ).trim()
+    return commitInfo
+}
 
 def getSite(){
     return "${JIRA_SITE}"
@@ -100,6 +100,13 @@ def getTransitionsTypes(){
     return transitionsTypes.data.toString()
 }
 
+def getTransitionId(){
+    def transitionsTypes = getTransitionsTypes()
+    for (transition in transitionsTypes){
+        print transitionsTypes.data.transitions
+    }
+}
+
 def editTransitionInput(){
     def transitionInput =
         [
@@ -113,7 +120,8 @@ def editTransitionInput(){
                     ]
             ],
             "transition": [
-                    "id"    : 21,
+                    "id"    : 21, //ID is a must
+                    //"name"  : "In Progress",
                     "fields": [
                             "assignee"  : [
                                     "name": "admin"
@@ -124,18 +132,12 @@ def editTransitionInput(){
                     ]
             ]
         ]
+    return transitionInput
 }
 
-def getCommitInfo(){
-    def commitInfo =sh (
-            script: 'git show $(git rev-parse HEAD) --pretty=format:"%n%n%n*Commit:* %h %n*User:* %an (%ae) %n*When:* %ar%n*Comment:* %s %n*Parent hash:* %p %n*Notes:* %N" --stat && echo -n "*Branch:* " &&  git branch --contains $(git rev-parse HEAD)',
-            returnStdout: true
-    ).trim()
-    return commitInfo
-}
 
 def setTransitionIssue(){
-    jiraTransitionIssue idOrKey: getIssueId(), input: transitionInput, site: getSite()
+    jiraTransitionIssue idOrKey: getIssueId(), input: editTransitionInput(), site: getSite()
 }
 
 def editNewIssue(){
@@ -143,11 +145,11 @@ def editNewIssue(){
     def newIssue = [fields: [project    : [id: getProjectId()],
                              summary    : "New JIRA Created from Jenkins.",
                              description: "New JIRA Created from Jenkins.",
-                             issuetype  : [id: 10004]]]
+                             issuetype  :  [id: 10004]]] //[name: "Bug"]]]
 }
 
 def setNewIssue(){
-    response = jiraNewIssue issue: testIssue, site: getSite()
+    response = jiraNewIssue issue: editNewIssue(), site: getSite()
 }
 
 def setLinkedIssue(){
@@ -167,3 +169,4 @@ def addComment(){
     )
     return newComment
 }
+
