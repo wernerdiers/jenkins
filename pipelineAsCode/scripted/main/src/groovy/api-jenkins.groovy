@@ -124,6 +124,3 @@ def buildJobWithParameter(String jobName){
     //def rxJson = new JsonSlurper().parseText(rx.getContent())
     return rx.status
 }
-
-
-//PROBAR CON POST http://10.1.2.10:8080/job/api-jenkins-build-job/build?PARAM_ONE=Ruben_pagate_las_facturas&PARAM_TWO=Ruben_botooooon
