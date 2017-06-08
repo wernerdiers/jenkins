@@ -16,14 +16,41 @@
       <file leaf-file-name="api-jenkins.groovy" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/groovy/api-jenkins.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="140">
-              <caret line="7" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-              <folding />
+            <state relative-caret-position="499">
+              <caret line="109" column="33" lean-forward="false" selection-start-line="109" selection-start-column="33" selection-end-line="109" selection-end-column="33" />
+              <folding>
+                <element signature="n#!!block;n#getCrumb#0" expanded="false" />
+                <element signature="n#!!block;n#buildJobCrumb#0" expanded="false" />
+                <element signature="n#!!block;n#buildJobCrumbWithParameter#0" expanded="false" />
+                <element signature="n#!!block;n#createJob#0" expanded="false" />
+                <element signature="n#!!block;n#deleteJob#0" expanded="false" />
+                <element signature="e#4570#5903#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="JenkinsTest.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/groovy/JenkinsTest.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1699">
+              <caret line="107" column="106" lean-forward="false" selection-start-line="107" selection-start-column="97" selection-end-line="107" selection-end-column="106" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#2908#2916#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
@@ -32,6 +59,8 @@
       <find>git_co</find>
       <find>openshift</find>
       <find>JENKINS_IP_PORT</find>
+      <find>copyJob</find>
+      <find>createJob</find>
     </findStrings>
   </component>
   <component name="IdeDocumentHistory">
@@ -39,6 +68,7 @@
       <list>
         <option value="$PROJECT_DIR$/src/groovy/Jenkinsfile-scripted-06.groovy" />
         <option value="$PROJECT_DIR$/src/groovy/Jenkinsfile-scripted-07.groovy" />
+        <option value="$PROJECT_DIR$/src/groovy/JenkinsTest.java" />
         <option value="$PROJECT_DIR$/src/groovy/api-jenkins.groovy" />
       </list>
     </option>
@@ -107,7 +137,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="configurable.group.build" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -275,7 +305,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="n#!!block;n#getCrumb#0" expanded="false" />
+            <element signature="n#!!block;n#buildJobCrumb#0" expanded="false" />
+            <element signature="n#!!block;n#buildJobCrumbWithParameter#0" expanded="false" />
+            <element signature="n#!!block;n#createJob#0" expanded="false" />
+            <element signature="n#!!block;n#deleteJob#0" expanded="false" />
+            <element signature="e#4570#5903#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -336,11 +373,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/groovy/JenkinsTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1699">
+          <caret line="107" column="106" lean-forward="false" selection-start-line="107" selection-start-column="97" selection-end-line="107" selection-end-column="106" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#2908#2916#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/groovy/api-jenkins.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="140">
-          <caret line="7" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="499">
+          <caret line="109" column="33" lean-forward="false" selection-start-line="109" selection-start-column="33" selection-end-line="109" selection-end-column="33" />
+          <folding>
+            <element signature="n#!!block;n#getCrumb#0" expanded="false" />
+            <element signature="n#!!block;n#buildJobCrumb#0" expanded="false" />
+            <element signature="n#!!block;n#buildJobCrumbWithParameter#0" expanded="false" />
+            <element signature="n#!!block;n#createJob#0" expanded="false" />
+            <element signature="n#!!block;n#deleteJob#0" expanded="false" />
+            <element signature="e#4570#5903#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
