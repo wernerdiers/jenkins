@@ -9,7 +9,7 @@ node() {
     PARAM_TWO = "Ruben_botooooon"
 
     stage('BUILD-JOB'){
-        buildJobCrumbWithParameter("${BUILD_JOB_NAME}")
+        buildJobWithParameter("${BUILD_JOB_NAME}")
     }
 
     stage('GET-STATUS'){
@@ -18,8 +18,15 @@ node() {
     }
 
     stage('COPY-JOB'){
-        copyJob("${BUILD_JOB_NAME}-CLONED","${BUILD_JOB_NAME}")
+       // copyJob("${BUILD_JOB_NAME}-CLONED","${BUILD_JOB_NAME}")
+    }
 
+    stage('CREATE-JOB'){
+        //createJob("uno")
+    }
+
+    stage('DELETE-JOB'){
+        deleteJob("${BUILD_JOB_NAME}-CLONED")
     }
 }
 
@@ -35,7 +42,7 @@ def getCrumb(){
 }
 
 
-def getLastJobStatus(String jobName) {
+def getLastJobStatus(jobName) {
     def rx = httpRequest httpMode: 'GET',\
             url: "${env.JENKINS_URL}job/${jobName}/lastBuild/api/json?pretty=true",\
             authentication: "${CREDENTIALS}",\
@@ -52,7 +59,7 @@ def getLastJobStatus(String jobName) {
 }
 
 
-def buildJobCrumb(String jobName){
+def buildJob(jobName){
     def CRUMB = getCrumb()
     def rx = httpRequest customHeaders: [[name:'Jenkins-Crumb',\
             value: "${CRUMB}"]],\
@@ -71,7 +78,7 @@ def buildJobCrumb(String jobName){
 }
 
 
-def buildJobCrumbWithParameter(String jobName){
+def buildJobWithParameter(jobName){
     def CRUMB = getCrumb()
     def URL_JOB = ["${env.JENKINS_URL}job/${jobName}/buildWithParameters/api/json?",
                    "PARAM_ONE=${PARAM_ONE}&",
@@ -94,7 +101,7 @@ def buildJobCrumbWithParameter(String jobName){
 }
 
 
-def copyJob(String newJobName, String sourceJobName){
+def copyJob(newJobName, sourceJobName){
     def CRUMB = getCrumb()
     def URL_JOB = ["${env.JENKINS_URL}createItem?",
                    "name=${newJobName}&",
@@ -111,39 +118,43 @@ def copyJob(String newJobName, String sourceJobName){
 }
 
 
-def createJob(String jobName) {
+def createJob(newJobName) {
+    def CRUMB = getCrumb()
+    def CONFIG_FILE_PATH= "/var/lib/jenkins/templates/config.xml"
+    //def CONFIG_FILE = new FileInputStream("${CONFIG_FILE_PATH}")
+    def URL_JOB = "${env.JENKINS_URL}createItem?name=${newJobName} "//--data-binary @${CONFIG_FILE_PATH}"
+
     def rx = httpRequest httpMode: 'POST',\
-            url: "${env.JENKINS_URL}createItem/${jobName}",\
+            customHeaders: [[name:'Jenkins-Crumb',value: "${CRUMB}"],
+                [name:'Content-Type',value: 'text/xml'],
+                [name:'Filename',value: "@${CONFIG_FILE_PATH}"]
+            ],\
+            contentType: 'TEXT_HTML',\
+            url: "${URL_JOB}",\
             authentication: "${CREDENTIALS}",\
             ignoreSslErrors: true,\
-            validResponseCodes: '100:500',\
-            acceptType: 'APPLICATION_JSON',\
-            contentType: 'APPLICATION_JSON',\
-            outputFile: 'response_file.json',\
-            consoleLogResponseBody: true
-
-    println('***Response: ' + rx.content)
-    def rxJson = new JsonSlurper().parseText(rx.getContent())
-    return rxJson['result']
+            validResponseCodes: '100:399'
 }
 
 
 def deleteJob(String jobName) {
+    def CRUMB = getCrumb()
     def rx = httpRequest httpMode: 'POST',\
-            url: "${env.JENKINS_URL}createItem/${jobName}",\
+            customHeaders: [[name:'Jenkins-Crumb',value: "${CRUMB}"]],\
+            url: "${env.JENKINS_URL}job/${jobName}/doDelete",\
             authentication: "${CREDENTIALS}",\
             ignoreSslErrors: true,\
-            validResponseCodes: '100:500',\
-            acceptType: 'APPLICATION_JSON',\
-            contentType: 'APPLICATION_JSON',\
-            outputFile: 'response_file.json',\
-            consoleLogResponseBody: true
-
-    println('***Response: ' + rx.content)
-    def rxJson = new JsonSlurper().parseText(rx.getContent())
-    return rxJson['result']
+            validResponseCodes: '100:500'
 }
 
+
+def parseConfigFile(configFile){
+    def xml = new XmlParser().parse(configFile)
+    xml.foo[0].each {
+        it.@id = "test2"
+        it.value = "test2"
+    }
+}
 
 /*
     Simple example - sending "String Parameters":
